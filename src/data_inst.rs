@@ -91,7 +91,7 @@ impl Instruction for DataInst {
                     dest: dest.try_into()?,
                     imm: buf[1],
                 }),
-                (rp, 0b001) => Ok(Lxi {
+                (rp, 0b001) if rp & 1 == 0 => Ok(Lxi {
                     dest: RegisterPair::try_from(rp >> 1)?,
                     imm0: buf[1],
                     imm1: buf[2],
