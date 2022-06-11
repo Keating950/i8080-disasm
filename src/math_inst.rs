@@ -1,4 +1,6 @@
 use crate::{
+    bits::Bits,
+    error::*,
     instruction::Instruction,
     register::{Register, RegisterPair},
 };
@@ -16,7 +18,7 @@ pub enum MathInst {
     Sui { imm: u8 },
     SbbR { src: Register },
     SbbM,
-    Sbi { val: u8 },
+    Sbi { imm: u8 },
     InrR { dest: Register },
     InrM,
     DcrR { dest: Register },
@@ -28,9 +30,61 @@ pub enum MathInst {
 }
 
 impl Instruction for MathInst {
-    #[allow(unused_variables)]
-    fn parse(buf: &[u8; 3]) -> crate::error::Result<Self> {
-        todo!()
+    fn parse(buf: &[u8; 3]) -> Result<Self> {
+        use MathInst::*;
+        match buf[0] {
+            0b00_100_111 => return Ok(Daa),
+            0b00_110_100 => return Ok(InrM),
+            0b00_110_101 => return Ok(DcrM),
+            0b10_000_110 => return Ok(AddM),
+            0b10_001_110 => return Ok(AdcM),
+            0b10_010_110 => return Ok(SubM),
+            0b10_011_110 => return Ok(SbbM),
+            0b11_000_110 => return Ok(Adi { imm: buf[1] }),
+            0b11_001_110 => return Ok(Aci),
+            0b11_010_110 => return Ok(Sui { imm: buf[1] }),
+            0b11_011_110 => return Ok(Sbi { imm: buf[1] }),
+            _ => (),
+        };
+        let bits = Bits::new(buf[0]);
+        let triples = (bits.bit_range(2..5), bits.bit_range(5..8));
+        match bits.bit_range(0..2) {
+            0b00 => match (triples.0, triples.1) {
+                (dest, 0b100) => Some(InrR {
+                    dest: dest.try_into()?,
+                }),
+                (dest, 0b101) => Some(DcrR {
+                    dest: dest.try_into()?,
+                }),
+                (rp, 0b0011) if rp & 1 == 0 => Some(Inx {
+                    rp: (rp >> 1).try_into()?,
+                }),
+                (rp, 0b1001) if rp & 1 == 0 => Some(Dad {
+                    rp: (rp >> 1).try_into()?,
+                }),
+                (rp, 0b1011) if rp & 1 == 0 => Some(Dcx {
+                    rp: (rp >> 1).try_into()?,
+                }),
+                _ => None,
+            },
+            0b10 => match (triples.0, triples.1) {
+                (0b000, src) => Some(AddR {
+                    src: src.try_into()?,
+                }),
+                (0b001, src) => Some(AdcR {
+                    src: src.try_into()?,
+                }),
+                (0b010, src) => Some(SubR {
+                    src: src.try_into()?,
+                }),
+                (0b011, src) => Some(SbbR {
+                    src: src.try_into()?,
+                }),
+                _ => None,
+            },
+            _ => None,
+        }
+        .ok_or_else(|| Error::IllegalInstruction(buf.clone()))
     }
 
     fn size(&self) -> usize {
