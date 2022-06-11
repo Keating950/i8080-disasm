@@ -1,3 +1,5 @@
+use std::ops::BitOr;
+
 use crate::error::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -14,14 +16,27 @@ pub enum Register {
 
 impl TryFrom<u8> for Register {
     type Error = Error;
-
     fn try_from(value: u8) -> Result<Self> {
         use Register::*;
-        const VALUES: [Register; 7] = [A, B, C, D, E, H, L];
+        const VALUES: [Register; 7] = [B, C, D, E, H, L, A];
         match VALUES.binary_search_by(|e| (*e as u8).cmp(&value)) {
             Ok(idx) => Ok(VALUES[idx]),
             Err(_) => Err(Error::InvalidRegister(value)),
         }
+    }
+}
+
+impl BitOr<u8> for Register {
+    type Output = u8;
+    fn bitor(self, rhs: u8) -> Self::Output {
+        (self as u8) | rhs
+    }
+}
+
+impl BitOr<Register> for u8 {
+    type Output = u8;
+    fn bitor(self, rhs: Register) -> Self::Output {
+        self | (rhs as u8)
     }
 }
 

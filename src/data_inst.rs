@@ -78,8 +78,9 @@ impl Instruction for DataInst {
             0xEB => return Ok(Xchg),
             _ => {}
         };
-        let bits = Bits(buf[0]);
-        match bits.bit_range(0..1) {
+        let bits = Bits::new(buf[0]);
+        let msbs = bits.bit_range(0..2);
+        match msbs {
             // Immediate and RP instructions
             0b00 => match (bits.bit_range(2..5), bits.bit_range(5..8)) {
                 (0b110, 0b110) => Ok(MviM { imm: buf[1] }),
@@ -100,7 +101,7 @@ impl Instruction for DataInst {
                     let discriminant = bits.bit_range(4..8);
                     match discriminant {
                         0b1010 => Ok(Ldax { rp }),
-                        0b0010 => Ok(Ldax { rp }),
+                        0b0010 => Ok(Stax { rp }),
                         _ => Err(Error::IllegalInstruction(buf.clone())),
                     }
                 }
@@ -128,6 +129,69 @@ impl Instruction for DataInst {
             MovR { .. } | MovFromM { .. } | MovToM { .. } | Ldax { .. } | Xchg => 1,
             MviR { .. } | MviM { .. } => 2,
             _ => 3,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{mkinst, mkinst_arr};
+
+    #[test]
+    fn test_parse() {
+        use crate::register::{Register::*, RegisterPair::*};
+        use DataInst::*;
+        let cases: &[([u8; 3], DataInst)] = &[
+            (mkinst_arr!(mkinst!(0b01, A, B)), MovR { dest: A, src: B }),
+            (mkinst_arr!(mkinst!(0b01, B, 0b110)), MovFromM { dest: B }),
+            (mkinst_arr!(mkinst!(0b01, 0b110, A)), MovToM { src: A }),
+            (
+                mkinst_arr!(mkinst!(0b00, C, 0b110), 0b1010),
+                MviR {
+                    dest: C,
+                    imm: 0b1010,
+                },
+            ),
+            (mkinst_arr!(0b00_110_110, 0xAA), MviM { imm: 0xAA }),
+            (
+                mkinst_arr!(mkinst!(0b00, rp = DE, 0b0001), 0xFF, 0x11),
+                Lxi {
+                    dest: DE,
+                    imm0: 0xFF,
+                    imm1: 0x11,
+                },
+            ),
+            (mkinst_arr!(0b00111010, 0xFF, 0xAA), Lda { addr: 0xAAFF }),
+            (mkinst_arr!(0b00110010, 0xFF, 0xAA), Sta { addr: 0xAAFF }),
+            (mkinst_arr!(0b00101010, 0xFF, 0xAA), Lhld { addr: 0xAAFF }),
+            (mkinst_arr!(0b00100010, 0xFF, 0xAA), Shld { addr: 0xAAFF }),
+            (mkinst_arr!(mkinst!(0b00, rp = BC, 0b1010)), Ldax { rp: BC }),
+            (mkinst_arr!(mkinst!(0b00, rp = DE, 0b0010)), Stax { rp: DE }),
+            (mkinst_arr!(0b11101011), Xchg),
+        ];
+        for (bytes, inst) in cases {
+            let parsed = match DataInst::parse(bytes) {
+                Ok(p) => p,
+                Err(e) => {
+                    let mut bytes_fmt = String::from("[");
+                    for (i, b) in bytes.iter().copied().enumerate() {
+                        let formatted = if i == bytes.len() - 1 {
+                            format!("0b{:08b}]", b)
+                        } else {
+                            format!("0b{:08b}, ", b)
+                        };
+                        bytes_fmt.push_str(&formatted);
+                    }
+                    assert!(
+                        false,
+                        "{:?}\nError parsing {}: Expected {:?}",
+                        e, bytes_fmt, inst
+                    );
+                    unreachable!()
+                }
+            };
+            assert_eq!(parsed, *inst);
         }
     }
 }

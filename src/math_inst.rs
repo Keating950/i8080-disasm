@@ -28,6 +28,7 @@ pub enum MathInst {
 }
 
 impl Instruction for MathInst {
+    #[allow(unused_variables)]
     fn parse(buf: &[u8; 3]) -> crate::error::Result<Self> {
         todo!()
     }
