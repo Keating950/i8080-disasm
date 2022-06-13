@@ -45,5 +45,42 @@ mod test_macros {
         ($msbs:expr, $triple0:expr, $triple1:expr) => {
             $msbs << 6 | (($triple0 as u8) << 3) | $triple1
         };
+        ($msbs:expr, $triple0:expr) => {
+            $msbs << 3 | $triple0
+        };
+    }
+
+    #[macro_export]
+    macro_rules! assert_inst_eq {
+        ($parsed:expr, $bytes:expr, $inst:expr) => {{
+            match $parsed {
+                Ok(p) => {
+                    assert_eq!(p, *$inst);
+                }
+                Err(e) => {
+                    assert!(
+                        false,
+                        "{:?}\nError parsing {}: Expected {:?}",
+                        e,
+                        $crate::test_macros::binary_arr($bytes),
+                        $inst
+                    );
+                    unreachable!()
+                }
+            }
+        }};
+    }
+
+    pub fn binary_arr(bytes: &[u8]) -> String {
+        let mut bytes_fmt = String::from("[");
+        for (i, b) in bytes.iter().copied().enumerate() {
+            let formatted = if i == bytes.len() - 1 {
+                format!("0b{:08b}]", b)
+            } else {
+                format!("0b{:08b}, ", b)
+            };
+            bytes_fmt.push_str(&formatted);
+        }
+        bytes_fmt
     }
 }

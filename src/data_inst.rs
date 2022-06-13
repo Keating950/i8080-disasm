@@ -136,13 +136,13 @@ impl Instruction for DataInst {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{mkinst, mkinst_arr};
+    use crate::{assert_inst_eq, mkinst, mkinst_arr};
 
     #[test]
-    fn test_parse() {
+    fn test_data_parse() {
         use crate::register::{Register::*, RegisterPair::*};
         use DataInst::*;
-        let cases: &[([u8; 3], DataInst)] = &[
+        let cases = &[
             (mkinst_arr!(mkinst!(0b01, A, B)), MovR { dest: A, src: B }),
             (mkinst_arr!(mkinst!(0b01, B, 0b110)), MovFromM { dest: B }),
             (mkinst_arr!(mkinst!(0b01, 0b110, A)), MovToM { src: A }),
@@ -171,27 +171,7 @@ mod tests {
             (mkinst_arr!(0b11101011), Xchg),
         ];
         for (bytes, inst) in cases {
-            let parsed = match DataInst::parse(bytes) {
-                Ok(p) => p,
-                Err(e) => {
-                    let mut bytes_fmt = String::from("[");
-                    for (i, b) in bytes.iter().copied().enumerate() {
-                        let formatted = if i == bytes.len() - 1 {
-                            format!("0b{:08b}]", b)
-                        } else {
-                            format!("0b{:08b}, ", b)
-                        };
-                        bytes_fmt.push_str(&formatted);
-                    }
-                    assert!(
-                        false,
-                        "{:?}\nError parsing {}: Expected {:?}",
-                        e, bytes_fmt, inst
-                    );
-                    unreachable!()
-                }
-            };
-            assert_eq!(parsed, *inst);
+            assert_inst_eq!(DataInst::parse(bytes), bytes, inst);
         }
     }
 }
