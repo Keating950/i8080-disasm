@@ -90,7 +90,7 @@ impl Instruction for MathInst {
     fn size(&self) -> usize {
         use MathInst::*;
         match self {
-            Adi { .. } | Aci { .. } | Sbi { .. } => 2,
+            Adi { .. } | Aci { .. } | Sbi { .. } | Sui { .. } => 2,
             _ => 1,
         }
     }
