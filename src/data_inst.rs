@@ -126,7 +126,7 @@ impl Instruction for DataInst {
     fn size(&self) -> usize {
         use DataInst::*;
         match self {
-            MovR { .. } | MovFromM { .. } | MovToM { .. } | Ldax { .. } | Xchg => 1,
+            MovR { .. } | MovFromM { .. } | MovToM { .. } | Ldax { .. } | Stax { .. } | Xchg => 1,
             MviR { .. } | MviM { .. } => 2,
             _ => 3,
         }
