@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+#![allow(dead_code, clippy::unusual_byte_groupings)]
 mod bits;
 mod data_inst;
 mod error;

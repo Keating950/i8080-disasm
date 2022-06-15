@@ -102,7 +102,7 @@ impl Instruction for DataInst {
                     match discriminant {
                         0b1010 => Ok(Ldax { rp }),
                         0b0010 => Ok(Stax { rp }),
-                        _ => Err(Error::IllegalInstruction(buf.clone())),
+                        _ => Err(Error::IllegalInstruction(*buf)),
                     }
                 }
             },
@@ -119,7 +119,7 @@ impl Instruction for DataInst {
                     src: src.try_into()?,
                 }),
             },
-            _ => Err(Error::IllegalInstruction(buf.clone())),
+            _ => Err(Error::IllegalInstruction(*buf)),
         }
     }
 

@@ -84,7 +84,7 @@ impl Instruction for MathInst {
             },
             _ => None,
         }
-        .ok_or_else(|| Error::IllegalInstruction(buf.clone()))
+        .ok_or(Error::IllegalInstruction(*buf))
     }
 
     fn size(&self) -> usize {
