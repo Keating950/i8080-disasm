@@ -1,4 +1,3 @@
-use std::error::Error as ErrorTrait;
 use std::fmt;
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -25,4 +24,4 @@ impl fmt::Display for Error {
     }
 }
 
-impl ErrorTrait for Error {}
+impl std::error::Error for Error {}
