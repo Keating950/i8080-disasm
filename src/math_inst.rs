@@ -47,27 +47,31 @@ impl Instruction for MathInst {
             _ => (),
         };
         let bits = Bits::new(buf[0]);
-        let triples = (bits.bit_range(2..5), bits.bit_range(5..8));
-        match bits.bit_range(0..2) {
-            0b00 => match (triples.0, triples.1) {
+        let (prefix, triple0, triple1) = (
+            bits.bit_range(0..2),
+            bits.bit_range(2..5),
+            bits.bit_range(5..8),
+        );
+        match prefix {
+            0b00 => match (triple0, triple1) {
                 (dest, 0b100) => Some(InrR {
                     dest: dest.try_into()?,
                 }),
                 (dest, 0b101) => Some(DcrR {
                     dest: dest.try_into()?,
                 }),
-                (rp, 0b0011) if rp & 1 == 0 => Some(Inx {
-                    rp: (rp >> 1).try_into()?,
-                }),
-                (rp, 0b1001) if rp & 1 == 0 => Some(Dad {
-                    rp: (rp >> 1).try_into()?,
-                }),
-                (rp, 0b1011) if rp & 1 == 0 => Some(Dcx {
-                    rp: (rp >> 1).try_into()?,
-                }),
-                _ => None,
+                _ => {
+                    let rp = RegisterPair::try_from(bits.bit_range(2..4))?;
+                    let discriminant = bits.bit_range(4..8);
+                    match (rp, discriminant) {
+                        (rp, 0b0011) => Some(Inx { rp }),
+                        (rp, 0b1001) => Some(Dad { rp }),
+                        (rp, 0b1011) => Some(Dcx { rp }),
+                        _ => None,
+                    }
+                }
             },
-            0b10 => match (triples.0, triples.1) {
+            0b10 => match (triple0, triple1) {
                 (0b000, src) => Some(AddR {
                     src: src.try_into()?,
                 }),

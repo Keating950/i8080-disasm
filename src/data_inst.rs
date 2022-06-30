@@ -91,15 +91,15 @@ impl Instruction for DataInst {
                     dest: dest.try_into()?,
                     imm: buf[1],
                 }),
-                (rp, 0b001) if rp & 1 == 0 => Ok(Lxi {
-                    dest: RegisterPair::try_from(rp >> 1)?,
-                    imm0: buf[1],
-                    imm1: buf[2],
-                }),
                 _ => {
                     let rp = RegisterPair::try_from(bits.bit_range(2..4))?;
                     let discriminant = bits.bit_range(4..8);
                     match discriminant {
+                        0b0001 => Ok(Lxi {
+                            dest: rp,
+                            imm0: buf[1],
+                            imm1: buf[2],
+                        }),
                         0b1010 => Ok(Ldax { rp }),
                         0b0010 => Ok(Stax { rp }),
                         _ => Err(Error::IllegalInstruction(*buf)),
