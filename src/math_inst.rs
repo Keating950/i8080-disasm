@@ -99,3 +99,40 @@ impl Instruction for MathInst {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{assert_inst_eq, mkinst, mkinst_arr};
+
+    #[test]
+    fn test_math_parse() {
+        use crate::register::{Register::*, RegisterPair::*};
+        use MathInst::*;
+        let cases = &[
+            (mkinst_arr!(mkinst!(0b10_000, A)), AddR { src: A }),
+            (mkinst_arr!(0b10_000_110), AddM),
+            (mkinst_arr!(0b11_000_110, 0xFF), Adi { imm: 0xFF }),
+            (mkinst_arr!(mkinst!(0b10_001, B)), AdcR { src: B }),
+            (mkinst_arr!(0b10_001_110), AdcM),
+            (mkinst_arr!(0b11_001_110, 0xAA), Aci { imm: 0xAA }),
+            (mkinst_arr!(mkinst!(0b10_010, D)), SubR { src: D }),
+            (mkinst_arr!(0b10_010_110), SubM),
+            (mkinst_arr!(0b11_010_110, 0xAF), Sui { imm: 0xAF }),
+            (mkinst_arr!(mkinst!(0b10_011, C)), SbbR { src: C }),
+            (mkinst_arr!(0b10_011_110), SbbM),
+            (mkinst_arr!(0b11_011_110, 0xCC), Sbi { imm: 0xCC }),
+            (mkinst_arr!(mkinst!(0b00, B, 0b100)), InrR { dest: B }),
+            (mkinst_arr!(0b00_110_100), InrM),
+            (mkinst_arr!(mkinst!(0b00, A, 0b101)), DcrR { dest: A }),
+            (mkinst_arr!(0b00_110_101), DcrM),
+            (mkinst_arr!(mkinst!(0b00, rp = DE, 0b0011)), Inx { rp: DE }),
+            (mkinst_arr!(mkinst!(0b00, rp = HL, 0b1011)), Dcx { rp: HL }),
+            (mkinst_arr!(mkinst!(0b00, rp = DE, 0b1001)), Dad { rp: DE }),
+            (mkinst_arr!(0b00_100_111), Daa),
+        ];
+        for (bytes, inst) in cases {
+            assert_inst_eq!(MathInst::parse(bytes), bytes, inst);
+        }
+    }
+}
