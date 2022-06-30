@@ -3,6 +3,7 @@ mod bits;
 mod data_inst;
 mod error;
 mod instruction;
+mod logical_inst;
 mod math_inst;
 mod register;
 
